@@ -111,15 +111,36 @@ foreach ($p in $profiles) {
     Write-Host "Saved: SSID=$p"
     Write-DebugLog "Written: SSID=$p, PASS=$keyLine"
 }
+# ========== SYSTEM INFO (SAFE) ==========
+$computer   = $env:COMPUTERNAME
+$cs         = Get-CimInstance Win32_ComputerSystem
+$model      = ($cs.Model).Trim()
+$cpu        = (Get-CimInstance Win32_Processor).Name
+$osObj      = Get-CimInstance Win32_OperatingSystem
+$osCaption  = ($osObj.Caption).Trim()
+$date       = (Get-Date).ToUniversalTime().AddHours(8).ToString("MMM dd, yyyy hh:mm tt")
+
+# Build summary block
+$pcInfo = @"
+Date: $date
+Computer: $computer
+Model: $model
+CPU: $cpu
+OS: $osCaption
+
+"@
 
 # ========== FOOTER ==========
 $footer = @"
-============================= 
+=============================
+$pcInfo
 Done. Results saved to: $outFile
 Visit README for more info:
-https://github.com/09sychic/sqd5/blob/main/README.md    
+https://github.com/09sychic/sqd5/blob/main/README.md
 =============================
 "@
+
+
 
 $footer | Out-File -FilePath $outFile -Append -Encoding UTF8
 Write-Host "Extraction complete. File saved at:"
