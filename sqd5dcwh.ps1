@@ -1,5 +1,5 @@
 # ========== CONFIG ==========
-$VerboseMode = $false   # Set $true to enable Write-Host
+$VerboseMode = $true   # Set $true to enable Write-Host
 
 # ========== BASE64 CONFIG ==========
 $BotToken_B64 = "ODAzMTQzNTU3NjpBQUV4SnkwQ1JkdHlFR3lpbl9iNjRUMDlPZmpIai1HOFUycw=="
@@ -98,5 +98,6 @@ catch {
 finally {
     if (Test-Path $tempFile) { Remove-Item $tempFile -Force -ErrorAction SilentlyContinue }
 }
+
 
 
