@@ -1,5 +1,5 @@
-# Local Runner for SQD5-DCWH v2.2.0
-# Optimized for Discord-only diagnostics
+# Local Runner for SQD5-DCWH v2.4.1
+# Optimized for Discord diagnostics
 
 $ScriptPath = Join-Path $PSScriptRoot "sqd5dcwh.ps1"
 
